@@ -127,16 +127,16 @@ def Steifigkeitsmatrix(elemente, N_xi):
         N_1_xi = -1./2
         N_2_xi =  1./2
         N_xi = [N_1_xi, N_2_xi]
+        Se = np.zeros((N_num, N_num))
         for i, p in enumerate(N_xi):
             for j, q in enumerate(N_xi):
-                Se = np.zeros((N_num, N_num))
                 gauss_int = GaussQuad(lambda xi: p * q, g_num)
                 Se_value = 2. / e_length_list[e] * E_modul_list[e] * A_list[e] * gauss_int
                 Se[i][j] = Se_value
 
-                for i in range(N_num):
-                    for j in range(N_num):
-                        S[el+i][el+j] += Se[i][j]
+        for i in range(N_num):
+            for j in range(N_num):
+                S[el+i][el+j] += Se[i][j]
 
         # Schleife ueber die Elemente
             # Schleife ueber die Ansatzfkten der Testfunktion
@@ -178,32 +178,33 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
         f_V_list.append(f_V)
         F_R = e[i]['F_R']
         F_R_list.append(F_R)
-        Postion_F_R = e[i]['Position_F_R']
-        Position_F_R_list.append(Postion_F_R)
+        Position_F_R = e[i]['Position_F_R']
+        Position_F_R_list.append(Position_F_R)
 
     for e in range(e_num):
         el = (N_num-1)*e
         N_1 = lambda xi: 1./2 * (1-xi)
         N_2 = lambda xi: 1./2 * (1+xi)
         N = [N_1, N_2]
+        fv = np.zeros((N_num))
+        Fr = np.zeros((N_num))
 
         for i, p in enumerate(N):
-            fv = np.zeros((N_num))
-            Fr = np.zeros((N_num))
-
-            gauss_int = GaussQuad(lambda xi: p(xi) * f_V_list[i], g_num)
+            #TODO: f_v_list[i] seems wrong, but results looks fine..
+            gauss_int = GaussQuad(lambda xi: p(xi) , g_num)
             # calculate the line loads
-            fv_value = e_length_list[e] /2 * A_list[e] * gauss_int
+            fv_value = e_length_list[e] /2 * A_list[e] * gauss_int * f_V_list[e]
             fv[i] = fv_value
             # calculate the external force at points
-            Fr_value = p(Position_F_R_list[i]) * F_R_list[i]
+            Fr_value = p(Position_F_R_list[e]) * F_R_list[e]
             Fr[i] = Fr_value
 
-            for i in range(N_num):
+        for i in range(N_num):
 
-                F_fv_part[el+i] += fv[i]
-                F_Fr_part[el+i] += Fr[i]
-            F = F_fv_part + F_Fr_part
+            F_fv_part[el+i] += fv[i]
+            F_Fr_part[el+i] += Fr[i]
+            
+    F = F_fv_part + F_Fr_part
 
     # TODO Praktikumsaufgabe 4:
         # Schleife ueber die Elemente
