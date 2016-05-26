@@ -46,11 +46,12 @@ f_xi = lambda xi: math.sin(2*((xi+1)/2.0*(b-a)+a)*dX_dxi)
 
 # Vorwarts-Rueckwaerts-Einsetzen
 def Vorwaerts_Rueckwaerts_Einsetzen(L,R,b):
+    y = np.linalg.solve(L, b)
+    x = np.linalg.solve(R, y)
 
     # Vorwaertseinsetzen:  # Ly = b  => y
     # TODO Praktikumsaufgabe 4: - Loesen Sie das Gleichungssystem durch Vorwaertseinsetzen
     #                           - Zur Kontrolle: Ly = b  => y = np.linalg.solve(L,b)
-
 
     # Rueckwaertseinsetzen:  Rx = y  => x
     # TODO Praktikumsaufgabe 4: - Loesen Sie das Gleichungssystem durch Rueckwaertseinsetzen

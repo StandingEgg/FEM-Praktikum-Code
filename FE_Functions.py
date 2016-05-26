@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 from Numerik_Tool import *
 from matplotlib.pyplot import figure, plot,show, title
 
@@ -158,10 +159,15 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
 
     # Ermitteln des Kraftvektors F
     F = np.zeros ((F_num))
+    F_fv_part = np.zeros((F_num))
+    F_Fr_part = np.zeros((F_num))
 
     A_list = []
     f_V_list = []
     e_length_list = []
+    F_R_list = []
+    Position_F_R_list = []
+
     for i in range(e_num):
         e = defElements()
         A = e[i]['A']
@@ -170,6 +176,10 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
         e_length_list.append(e_length)
         f_V = e[i]['f_V']
         f_V_list.append(f_V)
+        F_R = e[i]['F_R']
+        F_R_list.append(F_R)
+        Postion_F_R = e[i]['Position_F_R']
+        Position_F_R_list.append(Postion_F_R)
 
     for e in range(e_num):
         el = (N_num-1)*e
@@ -178,17 +188,22 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
         N = [N_1, N_2]
 
         for i, p in enumerate(N):
-            fe = np.zeros((N_num))
+            fv = np.zeros((N_num))
+            Fr = np.zeros((N_num))
 
             gauss_int = GaussQuad(lambda xi: p(xi) * f_V_list[i], g_num)
-            fe_value = e_length_list[e] /2 * A_list[e] * gauss_int
-            fe[i] = fe_value
+            # calculate the line loads
+            fv_value = e_length_list[e] /2 * A_list[e] * gauss_int
+            fv[i] = fv_value
+            # calculate the external force at points
+            Fr_value = p(Position_F_R_list[i]) * F_R_list[i]
+            Fr[i] = Fr_value
 
             for i in range(N_num):
 
-                F[el+i] += fe[i]
-
-
+                F_fv_part[el+i] += fv[i]
+                F_Fr_part[el+i] += Fr[i]
+            F = F_fv_part + F_Fr_part
 
     # TODO Praktikumsaufgabe 4:
         # Schleife ueber die Elemente
@@ -205,12 +220,13 @@ def Reduzieren_Steifigkeit (S):
     # Ermitteln des Kraftvektors unter Beruecksichtigung der Einspannung
     # TODO Praktikumsaufgabe 4:  - Steifigkeitsmatrix um die linke Einspannung reduzieren
     if Type_RB == 'NEUMANN-RB':
-        S_red
+        S_trans = sp.delete(S, 0, 0)
+        S_red = sp.delete(S_trans, 0, 1)
 
     # Ermitteln des Kraftvektors wenn Verschiebungs-RB gesetzt
     # TODO Praktikumsaufgabe 5:  - Steifigkeitsmatrix um die linke und rechte Einspannung reduzieren
     elif Type_RB == 'DIRICHLET-RB':
-        S_red
+        S_red = None
 
     return S_red
 
@@ -221,7 +237,9 @@ def Anpassen_Lastvektor (S, F, D):
 
     # TODO Praktikumsaufgabe 4:  - Lastvektor um die linke Einspannung reduzieren
     if Type_RB == 'NEUMANN-RB':
-        F
+
+        F = np.delete(F, 0)
+
 
     # TODO Praktikumsaufgabe 5:  - Lastvektor um die linke Einspannung reduzieren
     #                 - Rechte Verschiebung mit Steifigkeitsmatrix verrechnen und Lastvektor damit anpassen
