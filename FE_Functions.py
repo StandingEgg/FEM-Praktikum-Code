@@ -16,8 +16,8 @@ def getAnsatzfkt ():
         # Nach xi abgeleitete Ansatzfunktionen
         # TODO Praktikumsaufgabe 4: - Ableitung der Ansatzfunktionen nach xi
         #                - Hilfe-Schlagwort: Mathematische Funktionen
-        N_1_xi = -1./2
-        N_2_xi =  1./2
+        N_1_xi = lambda xi: -1./2
+        N_2_xi = lambda xi: 1./2
         N_xi = np.array ([N_1_xi,N_2_xi])       # abgelegt in einem Array
 
     # quadratische Ansatzfunktionen
@@ -203,7 +203,7 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
 
             F_fv_part[el+i] += fv[i]
             F_Fr_part[el+i] += Fr[i]
-            
+
     F = F_fv_part + F_Fr_part
 
     # TODO Praktikumsaufgabe 4:
@@ -220,6 +220,8 @@ def Reduzieren_Steifigkeit (S):
 
     # Ermitteln des Kraftvektors unter Beruecksichtigung der Einspannung
     # TODO Praktikumsaufgabe 4:  - Steifigkeitsmatrix um die linke Einspannung reduzieren
+
+    ###### Why NEUMANN-RB here,
     if Type_RB == 'NEUMANN-RB':
         S_trans = sp.delete(S, 0, 0)
         S_red = sp.delete(S_trans, 0, 1)
@@ -259,7 +261,7 @@ def Anpassen_Verschiebungsvektor(D, x):
     # ist bereits enthalten.
     # TODO Praktikumsaufgabe 4:  - vervollstaendigen Sie die fehlende Codezeile
     if Type_RB == 'NEUMANN-RB':
-        D
+        D = np.insert(x, 0, 0)
 
     # Passt den Verschiebungsvektor D um die berechneten Werte x an. Der erste (linke Einspannung)
     # und der letzte (Verschiebungs-RB) Eintrag sind bereits enthalten.
@@ -289,15 +291,21 @@ def Elastischer_Praediktor (elemente, N_xi, D):
     #                    und Dehnungswerte elementweise
 
     #Schleife ueber alle Elemente
+    epsilon_list = []
+    sigma_list = []
     for e in range(e_num):
 
         # Dehnung (= epsilon) = N_xi*d;
-        elemente[e]['Dehnung']
-
+        epsilon = elemente[e]['Dehnung'] = N_xi[0](g) * D[e] + N_xi[1](g) * D[e+1]
+        epsilon_list.append(epsilon)
+        epsilon_array = np.asarray(epsilon_list)
         # Spannung = E * (epsilon - epsilon^p)
-        elemente[e]['Spannung']
+        sigma = elemente[e]['Spannung'] = elemente[e]['E'] * (elemente[e]['Dehnung'] - elemente[e]['epsilon_p'])
+        sigma_list.append(sigma)
+        sigma_array = np.asarray(sigma_list)
 
-    return
+
+    return epsilon_array, sigma_array
 
 # Plastischer Korrektor
 def Plastischer_Korrektor (elemente):
@@ -356,21 +364,25 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
 
     # Schleife ueber alle Elemente
     for e in range(e_num):
-        elemente[e]['Verschiebungsfeld']    # Verschiebungsfeld = N*d
-        elemente[e]['Dehnungsfeld']         # Dehnungsfeld (^= epsilon) = N_x*d;
+        elemente[e]['Verschiebungsfeld'] = N[0](-1) * D[e] + N[1](1) * D[e+1]   # Verschiebungsfeld = N*d
+        elemente[e]['Dehnungsfeld'] = N_xi[0](-1) * D[e] + N_xi[1](-1) * D[e+1]        # Dehnungsfeld (^= epsilon) = N_x*d;
         elemente[e]['epsilon_p_feld']    = make_func_of_epsilon_p(elemente[e]['epsilon_p'])(xi)*np.ones(21)
-        elemente[e]['Spannungsfeld']        # Spannungsfeld = E * (epsilon - epsilon^p)
+        elemente[e]['Spannungsfeld'] = elemente[e]['E'] * (elemente[e]['Dehnungsfeld'] - elemente[e]['epsilon_p_feld'])        # Spannungsfeld = E * (epsilon - epsilon^p)
 
 
     # TODO Praktikumsaufgabe 4  - Elementweise ermittelte Felder (siehe oben) in einem Array zusammenfassen
 
-    Spannungsfeld = []; Verschiebungsfeld = []; epsilon_p_feld = []; X = []
+    Spannungsfeld = []; Verschiebungsfeld = []; epsilon_p_feld = []; X = []; ele_length = []
     # Schleife ueber alle Elemente
     for e in range(e_num):
-        Spannungsfeld       # Element-Spannungsfelder aneinanderhaengen
-        Verschiebungsfeld   # Element-Verschiebungsfelder aneinanderhaengen
-        epsilon_p_feld      # Element-epsilon_p_felder aneinanderhaengen
-        X                   # Transforamtion auf globale X-Koordinate
+        Spannungsfeld.append(elemente[e]['Spannungsfeld'])       # Element-Spannungsfelder aneinanderhaengen
+        Verschiebungsfeld.append(elemente[e]['Verschiebungsfeld'])   # Element-Verschiebungsfelder aneinanderhaengen
+        epsilon_p_feld.append(elemente[e]['epsilon_p_feld'])      # Element-epsilon_p_felder aneinanderhaengen
+        ele_length.append(elemente[e]['h'])
+    x_coord = 0
+    for i in ele_length:
+        x_coord += i
+        X.append(x_coord)                    # Transforamtion auf globale X-Koordinate
 
 
     # Ausgabe der Ergebisse in Form von Plots
