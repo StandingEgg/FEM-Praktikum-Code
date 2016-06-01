@@ -1,6 +1,8 @@
 import numpy as np
 import scipy as sp
 from Numerik_Tool import *
+import pylab
+import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure, plot,show, title
 
 
@@ -364,31 +366,72 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
 
     # Schleife ueber alle Elemente
     for e in range(e_num):
-        elemente[e]['Verschiebungsfeld'] = N[0](-1) * D[e] + N[1](1) * D[e+1]   # Verschiebungsfeld = N*d
-        elemente[e]['Dehnungsfeld'] = N_xi[0](-1) * D[e] + N_xi[1](-1) * D[e+1]        # Dehnungsfeld (^= epsilon) = N_x*d;
+        # for i in xi:
+        #     elemente[e]['Verschiebungsfeld'] = N[0](xi[i]) * D[e] + N[1](xi[i]) * D[e+1]   # Verschiebungsfeld = N*d
+        #     elemente[e]['Dehnungsfeld'] = N_xi[0](xi[i]) * D[e] + N_xi[1](xi[i]) * D[e+1]        # Dehnungsfeld (^= epsilon) = N_x*d;
+        #     elemente[e]['epsilon_p_feld']    = make_func_of_epsilon_p(elemente[e]['epsilon_p'])(xi[i])*np.ones(21)
+        #     elemente[e]['Spannungsfeld'] = elemente[e]['E'] * (elemente[e]['Dehnungsfeld'] - elemente[e]['epsilon_p_feld']) # Spannungsfeld = E * (epsilon - epsilon^p)
+
+        elemente[e]['Verschiebungsfeld'] = N[0](xi) * D[e] + N[1](xi) * D[e+1]   # Verschiebungsfeld = N*d
+        elemente[e]['Dehnungsfeld'] = N_xi[0](xi) * D[e] + N_xi[1](xi) * D[e+1]        # Dehnungsfeld (^= epsilon) = N_x*d;
         elemente[e]['epsilon_p_feld']    = make_func_of_epsilon_p(elemente[e]['epsilon_p'])(xi)*np.ones(21)
-        elemente[e]['Spannungsfeld'] = elemente[e]['E'] * (elemente[e]['Dehnungsfeld'] - elemente[e]['epsilon_p_feld'])        # Spannungsfeld = E * (epsilon - epsilon^p)
+        elemente[e]['Spannungsfeld'] = elemente[e]['E'] * (elemente[e]['Dehnungsfeld'] - elemente[e]['epsilon_p_feld']) # Spannungsfeld = E * (epsilon - epsilon^p)
 
 
     # TODO Praktikumsaufgabe 4  - Elementweise ermittelte Felder (siehe oben) in einem Array zusammenfassen
 
-    Spannungsfeld = []; Verschiebungsfeld = []; epsilon_p_feld = []; X = []; ele_length = []
+    Spannungsfeld = []; Verschiebungsfeld = []; Dehnungsfeld = []; epsilon_p_feld = []; X = []; ele_length = []
     # Schleife ueber alle Elemente
     for e in range(e_num):
         Spannungsfeld.append(elemente[e]['Spannungsfeld'])       # Element-Spannungsfelder aneinanderhaengen
         Verschiebungsfeld.append(elemente[e]['Verschiebungsfeld'])   # Element-Verschiebungsfelder aneinanderhaengen
         epsilon_p_feld.append(elemente[e]['epsilon_p_feld'])      # Element-epsilon_p_felder aneinanderhaengen
         ele_length.append(elemente[e]['h'])
-    x_coord = 0
-    for i in ele_length:
-        x_coord += i
-        X.append(x_coord)                    # Transforamtion auf globale X-Koordinate
+        Dehnungsfeld.append(elemente[e]['Dehnungsfeld'])
+    s1 = Spannungsfeld[0]
+    s2 = Spannungsfeld[1]
+    s3 = Spannungsfeld[2]
+    s4 = Spannungsfeld[3]
+    s5 = Spannungsfeld[4]
 
+    e1 = Dehnungsfeld[0]
+    e2 = Dehnungsfeld[1]
+    e3 = Dehnungsfeld[2]
+    e4 = Dehnungsfeld[3]
+    e5 = Dehnungsfeld[4]
+
+    v1 = Verschiebungsfeld[0]
+    v2 = Verschiebungsfeld[1]
+    v3 = Verschiebungsfeld[2]
+    v4 = Verschiebungsfeld[3]
+    v5 = Verschiebungsfeld[4]
+
+    epsilon_p_1 = epsilon_p_feld[0]
+    epsilon_p_2 = epsilon_p_feld[1]
+    epsilon_p_3 = epsilon_p_feld[2]
+    epsilon_p_4 = epsilon_p_feld[3]
+    epsilon_p_5 = epsilon_p_feld[4]
+
+    Spannungsfeld = np.concatenate((s1,s2,s3,s4,s5), axis=0)
+    #Dehnungsfeld = np.concatenate((e1,e2,e3,e4,e5), axis=0)
+    Verschiebungsfeld = np.concatenate((v1,v2,v3,v4,v5), axis=0)
+    epsilon_p_feld = np.concatenate((epsilon_p_1,epsilon_p_2,epsilon_p_3,epsilon_p_4,epsilon_p_5), axis=0)
+    # x_coord = 0
+    # for i in ele_length:
+    #     x_coord += i
+    #     X.append(x_coord)
+    X = np.linspace(0,1100,105)                   # Transforamtion auf globale X-Koordinate
 
     # Ausgabe der Ergebisse in Form von Plots
-    figure(1); title('Spannung', color='b', fontsize=20);          plot(X,Spannungsfeld)
-    figure(2); title('Verschiebung', color='b', fontsize=20);      plot(X,Verschiebungsfeld)
-    figure(3); title('plast. Dehnung', color='b', fontsize=20);    plot(X,epsilon_p_feld)
+    figure(1); title('Spannung', color='b', fontsize=20); pylab.ylim([0,21000]); plot(X,Spannungsfeld);
+    plt.xlabel('Position (mm)'); plt.ylabel('Spannung (N/mm2)')
+    figure(2); title('Verschiebung', color='b', fontsize=20);      plot(X,Verschiebungsfeld);
+    plt.xlabel('Position (mm)'); plt.ylabel('Verschiebung (mm)')
+    figure(3); title('plast. Dehnung', color='b', fontsize=20);    plot(X,epsilon_p_feld);
+    plt.xlabel('Position (mm)'); plt.ylabel('plast. Dehnung (-)')
+    figure(4); title('Dehnung', color='b', fontsize=20);           plot(X,Spannungsfeld/2.1E5)
+    plt.xlabel('Position (mm)'); plt.ylabel('Dehnung (-)')
+
     show()
 
 # Erstellt eine lineare mathematische Funktion aus dem Array der plastischen Dehnung
