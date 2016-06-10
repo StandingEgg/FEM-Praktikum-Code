@@ -388,6 +388,7 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
         epsilon_p_feld.append(elemente[e]['epsilon_p_feld'])      # Element-epsilon_p_felder aneinanderhaengen
         ele_length.append(elemente[e]['h'])
         Dehnungsfeld.append(elemente[e]['Dehnungsfeld'])
+
     s1 = Spannungsfeld[0]
     s2 = Spannungsfeld[1]
     s3 = Spannungsfeld[2]
@@ -413,22 +414,33 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
     epsilon_p_5 = epsilon_p_feld[4]
 
     Spannungsfeld = np.concatenate((s1,s2,s3,s4,s5), axis=0)
+
     #Dehnungsfeld = np.concatenate((e1,e2,e3,e4,e5), axis=0)
     Verschiebungsfeld = np.concatenate((v1,v2,v3,v4,v5), axis=0)
+    Verschiebungsfeld = np.delete(Verschiebungsfeld, [20,41,62,83])
+    Dehnungsfeld = np.delete(Dehnungsfeld, [20,40,60,80])
+    Spannungsfeld = np.delete(Spannungsfeld, [20,40,60,80])
+    epsilon_p_feld = np.delete(epsilon_p_feld, [20,40,60,80])
+    print(Spannungsfeld)
+    print(len(Spannungsfeld))
+    # del Verschiebungsfeld[20]
+    # del Verschiebungsfeld[39]
+    # del Verschiebungsfeld[58]
+    # del Verschiebungsfeld[77]
     epsilon_p_feld = np.concatenate((epsilon_p_1,epsilon_p_2,epsilon_p_3,epsilon_p_4,epsilon_p_5), axis=0)
     # x_coord = 0
     # for i in ele_length:
     #     x_coord += i
     #     X.append(x_coord)
-    X = np.linspace(0,1100,105)                   # Transforamtion auf globale X-Koordinate
+    X = np.linspace(0,1100,101)                  # Transforamtion auf globale X-Koordinate
 
     # Ausgabe der Ergebisse in Form von Plots
     figure(1); title('Spannung', color='b', fontsize=20); pylab.ylim([0,21000]); plot(X,Spannungsfeld);
     plt.xlabel('Position (mm)'); plt.ylabel('Spannung (N/mm2)')
     figure(2); title('Verschiebung', color='b', fontsize=20);      plot(X,Verschiebungsfeld);
     plt.xlabel('Position (mm)'); plt.ylabel('Verschiebung (mm)')
-    figure(3); title('plast. Dehnung', color='b', fontsize=20);    plot(X,epsilon_p_feld);
-    plt.xlabel('Position (mm)'); plt.ylabel('plast. Dehnung (-)')
+    # figure(3); title('plast. Dehnung', color='b', fontsize=20);    plot(X,epsilon_p_feld);
+    # plt.xlabel('Position (mm)'); plt.ylabel('plast. Dehnung (-)')
     figure(4); title('Dehnung', color='b', fontsize=20);           plot(X,Spannungsfeld/2.1E5)
     plt.xlabel('Position (mm)'); plt.ylabel('Dehnung (-)')
 
