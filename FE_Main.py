@@ -17,16 +17,16 @@ from FE_Functions import *
 # -------------------------------
 # Diese Variablen dienen als Steuerelemente und koennen/muessen geaendert werden
 # Anzahl an Gausspunkten
-g_num = 1
+g_num = 2
 
 # Anzahl an Ansatzfunktionen
-N_num = 2
+N_num = 3
 
 # Art des Materialverhaltens.       ELASTISCH, ISOTROP oder KINEMATISCH
 Type_Verf = 'ELASTISCH'
 
 # Art der rechten Randbedingung.    DIRICHLET-RB  oder NEUMANN-RB
-Type_RB = 'NEUMANN-RB'
+Type_RB = 'DIRICHLET-RB'
 # ---------------------------------
 
 # Anzahl an Elementen
@@ -71,7 +71,7 @@ S = Steifigkeitsmatrix(elemente, N_xi)
 S_red = Reduzieren_Steifigkeit (S)
 
 # Loesung des Gleichgewichts mit Hilfe der LR-Zerlegung und anschliessendem Vorwaerts-Rueckwaerts-Einsetzen
-L,R= LR_Zerlegung(S_red)
+L,R = LR_Zerlegung(S_red)
 
 
 # laeuft die Lastschritte ab. Bei isotropem oder elastischem Materialverhalten gibt es nur einen Lastschritt = 1

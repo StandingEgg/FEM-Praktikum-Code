@@ -25,16 +25,16 @@ def getAnsatzfkt ():
     # quadratische Ansatzfunktionen
     if N_num == 3:
         # TODO Praktikumsaufgabe 5: - Definition der Ansatzfunktionen
-        N_1
-        N_2
-        N_3
+        N_1 = lambda xi: -1./2 * xi * (1-xi)
+        N_2 = lambda xi: (1-xi) * (1+xi)
+        N_3 = lambda xi: 1./2 * xi * (1+xi)
         N = np.array ([N_1,N_2,N_3])
 
         # Nach xi abgeleitete Ansatzfunktionen
         # TODO Praktikumsaufgabe 5: - Ableitung der Ansatzfunktionen nach xi
-        N_1_xi
-        N_2_xi
-        N_3_xi
+        N_1_xi = lambda xi: -1./2 + xi
+        N_2_xi = lambda xi: -2 * xi
+        N_3_xi = lambda xi: 1./2 + xi
         N_xi = np.array ([N_1_xi,N_2_xi,N_3_xi])
 
     return N, N_xi
@@ -61,10 +61,10 @@ def defElements():
     #####  Werden erst in Termin 4 und 5 von Bedeutung sein => zunaechst mit Null initialisiert
     # TODO Praktikumsaufgabe 5: Materialparameter fuer isotrope Verfestigung definieren
     # TODO Praktikumsaufgabe 6: Materialparameter fuer kinematische Verfestigung definieren
-    sigma_y   = 0                       # Fliessspannung
-    K_elplast = 0                       # elastoplast. Tangentenmodul
+    sigma_y   = 140                       # Fliessspannung
+    K_elplast = 4000                       # elastoplast. Tangentenmodul
     epsilon_p = 0                       # initiale plastische Dehnung
-    m = 0                               # Exponent der isotropen Verfestigung
+    m = 1                               # Exponent der isotropen Verfestigung
     H = 0                               # kinematische Verfestigung
     q = 0                               # initiale kinematische Verfestigungsvariable: q_0
     #####
@@ -98,7 +98,7 @@ def Dirichlet_RB ():
     D[0] = 0                                    # An der ersten Stelle (Einspannung) zwingend Null.
 
     # TODO Praktikumsaufgabe 5: Verschiebungsrandbedinung am rechten Rand vorgeben
-
+    D[-1] = 0.9
     return D
 
 
@@ -111,29 +111,17 @@ def Steifigkeitsmatrix(elemente, N_xi):
     S = np.zeros ((S_num,S_num))
     # TODO Praktikumsaufgabe 4:
 
-    E_modul_list = []
-    A_list = []
-    e_length_list = []
-    for i in range(e_num):
-        e = defElements()
-        E_modul = e[i]['E']
-        E_modul_list.append(E_modul)
-        A = e[i]['A']
-        A_list.append(A)
-        e_length = e[i]['h']
-        e_length_list.append(e_length)
-
-
     for e in range(e_num):
         el = (N_num-1)*e
-        N_1_xi = -1./2
-        N_2_xi =  1./2
-        N_xi = [N_1_xi, N_2_xi]
+        N_1_xi = lambda xi: -1./2 + xi
+        N_2_xi = lambda xi: -2 * xi
+        N_3_xi = lambda xi: 1./2 + xi
+        N_xi = [N_1_xi, N_2_xi, N_3_xi]
         Se = np.zeros((N_num, N_num))
         for i, p in enumerate(N_xi):
             for j, q in enumerate(N_xi):
-                gauss_int = GaussQuad(lambda xi: p * q, g_num)
-                Se_value = 2. / e_length_list[e] * E_modul_list[e] * A_list[e] * gauss_int
+                gauss_int = GaussQuad(lambda xi: p(xi) * q(xi), g_num)
+                Se_value = 2. / elemente[e]['h'] * elemente[e]['E'] * elemente[e]['A'] * gauss_int
                 Se[i][j] = Se_value
 
         for i in range(N_num):
@@ -164,41 +152,18 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
     F_fv_part = np.zeros((F_num))
     F_Fr_part = np.zeros((F_num))
 
-    A_list = []
-    f_V_list = []
-    e_length_list = []
-    F_R_list = []
-    Position_F_R_list = []
-
-    for i in range(e_num):
-        e = defElements()
-        A = e[i]['A']
-        A_list.append(A)
-        e_length = e[i]['h']
-        e_length_list.append(e_length)
-        f_V = e[i]['f_V']
-        f_V_list.append(f_V)
-        F_R = e[i]['F_R']
-        F_R_list.append(F_R)
-        Position_F_R = e[i]['Position_F_R']
-        Position_F_R_list.append(Position_F_R)
-
     for e in range(e_num):
         el = (N_num-1)*e
-        N_1 = lambda xi: 1./2 * (1-xi)
-        N_2 = lambda xi: 1./2 * (1+xi)
-        N = [N_1, N_2]
         fv = np.zeros((N_num))
         Fr = np.zeros((N_num))
 
         for i, p in enumerate(N):
-            #TODO: f_v_list[i] seems wrong, but results looks fine..
             gauss_int = GaussQuad(lambda xi: p(xi) , g_num)
             # calculate the line loads
-            fv_value = e_length_list[e] /2 * A_list[e] * gauss_int * f_V_list[e]
+            fv_value = elemente[e]['h'] /2 * elemente[e]['A'] * gauss_int * elemente[e]['f_V']
             fv[i] = fv_value
             # calculate the external force at points
-            Fr_value = p(Position_F_R_list[e]) * F_R_list[e]
+            Fr_value = p(elemente[e]['Position_F_R']) * elemente[e]['F_R']
             Fr[i] = Fr_value
 
         for i in range(N_num):
@@ -223,7 +188,6 @@ def Reduzieren_Steifigkeit (S):
     # Ermitteln des Kraftvektors unter Beruecksichtigung der Einspannung
     # TODO Praktikumsaufgabe 4:  - Steifigkeitsmatrix um die linke Einspannung reduzieren
 
-    ###### Why NEUMANN-RB here,
     if Type_RB == 'NEUMANN-RB':
         S_trans = sp.delete(S, 0, 0)
         S_red = sp.delete(S_trans, 0, 1)
@@ -231,7 +195,12 @@ def Reduzieren_Steifigkeit (S):
     # Ermitteln des Kraftvektors wenn Verschiebungs-RB gesetzt
     # TODO Praktikumsaufgabe 5:  - Steifigkeitsmatrix um die linke und rechte Einspannung reduzieren
     elif Type_RB == 'DIRICHLET-RB':
-        S_red = None
+        # remove the first row and column for left side
+        first_trans = sp.delete(S, 0, 0)
+        first_red = sp.delete(first_trans, 0, 1)
+        # remove the last row and column for right side
+        second_trans = sp.delete(first_red, -1, 0)
+        S_red = sp.delete(second_trans, -1, 1)
 
     return S_red
 
@@ -249,7 +218,9 @@ def Anpassen_Lastvektor (S, F, D):
     # TODO Praktikumsaufgabe 5:  - Lastvektor um die linke Einspannung reduzieren
     #                 - Rechte Verschiebung mit Steifigkeitsmatrix verrechnen und Lastvektor damit anpassen
     elif Type_RB == 'DIRICHLET-RB':
-        F
+        # remove the first and last value
+        Q = np.delete(F, 0)
+        F = np.delete(Q, -1)
 
     return F
 
@@ -269,11 +240,9 @@ def Anpassen_Verschiebungsvektor(D, x):
     # und der letzte (Verschiebungs-RB) Eintrag sind bereits enthalten.
     # TODO Praktikumsaufgabe 5:  - vervollstaendigen Sie die fehlende Codezeile
     elif Type_RB == 'DIRICHLET-RB':
-        D
-
+        for i, e in enumerate(x):
+            D[i+1] = e
     return D
-
-
 
 # Elastischer Praediktor
 def Elastischer_Praediktor (elemente, N_xi, D):
@@ -298,7 +267,9 @@ def Elastischer_Praediktor (elemente, N_xi, D):
     for e in range(e_num):
 
         # Dehnung (= epsilon) = N_xi*d;
-        epsilon = elemente[e]['Dehnung'] = N_xi[0](g) * D[e] + N_xi[1](g) * D[e+1]
+        epsilon = elemente[e]['Dehnung'] = N_xi[0](g)*2/elemente[e]['h'] * D[e] +\
+        N_xi[1](g)*2/elemente[e]['h'] * (D[e]+D[e+1])/2 + N_xi[2](g)*2/elemente[e]['h'] * D[e+1]
+
         epsilon_list.append(epsilon)
         epsilon_array = np.asarray(epsilon_list)
         # Spannung = E * (epsilon - epsilon^p)
@@ -366,28 +337,21 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
 
     # Schleife ueber alle Elemente
     for e in range(e_num):
-        # for i in xi:
-        #     elemente[e]['Verschiebungsfeld'] = N[0](xi[i]) * D[e] + N[1](xi[i]) * D[e+1]   # Verschiebungsfeld = N*d
-        #     elemente[e]['Dehnungsfeld'] = N_xi[0](xi[i]) * D[e] + N_xi[1](xi[i]) * D[e+1]        # Dehnungsfeld (^= epsilon) = N_x*d;
-        #     elemente[e]['epsilon_p_feld']    = make_func_of_epsilon_p(elemente[e]['epsilon_p'])(xi[i])*np.ones(21)
-        #     elemente[e]['Spannungsfeld'] = elemente[e]['E'] * (elemente[e]['Dehnungsfeld'] - elemente[e]['epsilon_p_feld']) # Spannungsfeld = E * (epsilon - epsilon^p)
-
         elemente[e]['Verschiebungsfeld'] = N[0](xi) * D[e] + N[1](xi) * D[e+1]   # Verschiebungsfeld = N*d
-        elemente[e]['Dehnungsfeld'] = N_xi[0](xi) * D[e] + N_xi[1](xi) * D[e+1]        # Dehnungsfeld (^= epsilon) = N_x*d;
+        elemente[e]['Dehnungsfeld'] = N_xi[0](xi) * 2/elemente[e]['h'] * np.ones(21) * D[e] + N_xi[1](xi) * 2/elemente[e]['h'] * np.ones(21) * D[e+1]        # Dehnungsfeld (^= epsilon) = N_x*d;
         elemente[e]['epsilon_p_feld']    = make_func_of_epsilon_p(elemente[e]['epsilon_p'])(xi)*np.ones(21)
         elemente[e]['Spannungsfeld'] = elemente[e]['E'] * (elemente[e]['Dehnungsfeld'] - elemente[e]['epsilon_p_feld']) # Spannungsfeld = E * (epsilon - epsilon^p)
-
-
+        elemente[e]['X'] = elemente[e]['1.Knoten'] + (xi+1)/2*elemente[e]['h']
     # TODO Praktikumsaufgabe 4  - Elementweise ermittelte Felder (siehe oben) in einem Array zusammenfassen
 
-    Spannungsfeld = []; Verschiebungsfeld = []; Dehnungsfeld = []; epsilon_p_feld = []; X = []; ele_length = []
+    Spannungsfeld = []; Verschiebungsfeld = []; Dehnungsfeld = []; epsilon_p_feld = []; X = [];
     # Schleife ueber alle Elemente
     for e in range(e_num):
         Spannungsfeld.append(elemente[e]['Spannungsfeld'])       # Element-Spannungsfelder aneinanderhaengen
         Verschiebungsfeld.append(elemente[e]['Verschiebungsfeld'])   # Element-Verschiebungsfelder aneinanderhaengen
         epsilon_p_feld.append(elemente[e]['epsilon_p_feld'])      # Element-epsilon_p_felder aneinanderhaengen
-        ele_length.append(elemente[e]['h'])
         Dehnungsfeld.append(elemente[e]['Dehnungsfeld'])
+        X.append(elemente[e]['X'])
 
     s1 = Spannungsfeld[0]
     s2 = Spannungsfeld[1]
@@ -413,35 +377,28 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
     epsilon_p_4 = epsilon_p_feld[3]
     epsilon_p_5 = epsilon_p_feld[4]
 
-    Spannungsfeld = np.concatenate((s1,s2,s3,s4,s5), axis=0)
+    x1 = X[0]
+    x2 = X[1]
+    x3 = X[2]
+    x4 = X[3]
+    x5 = X[4]
 
-    #Dehnungsfeld = np.concatenate((e1,e2,e3,e4,e5), axis=0)
+    Spannungsfeld = np.concatenate((s1,s2,s3,s4,s5), axis=0)
+    Dehnungsfeld = np.concatenate((e1,e2,e3,e4,e5), axis=0)
     Verschiebungsfeld = np.concatenate((v1,v2,v3,v4,v5), axis=0)
-    Verschiebungsfeld = np.delete(Verschiebungsfeld, [20,41,62,83])
-    Dehnungsfeld = np.delete(Dehnungsfeld, [20,40,60,80])
-    Spannungsfeld = np.delete(Spannungsfeld, [20,40,60,80])
-    epsilon_p_feld = np.delete(epsilon_p_feld, [20,40,60,80])
-    print(Spannungsfeld)
-    print(len(Spannungsfeld))
-    # del Verschiebungsfeld[20]
-    # del Verschiebungsfeld[39]
-    # del Verschiebungsfeld[58]
-    # del Verschiebungsfeld[77]
+    X = np.concatenate((x1,x2,x3,x4,x5), axis=0)
+
     epsilon_p_feld = np.concatenate((epsilon_p_1,epsilon_p_2,epsilon_p_3,epsilon_p_4,epsilon_p_5), axis=0)
-    # x_coord = 0
-    # for i in ele_length:
-    #     x_coord += i
-    #     X.append(x_coord)
-    X = np.linspace(0,1100,101)                  # Transforamtion auf globale X-Koordinate
+              # Transforamtion auf globale X-Koordinate
 
     # Ausgabe der Ergebisse in Form von Plots
-    figure(1); title('Spannung', color='b', fontsize=20); pylab.ylim([0,21000]); plot(X,Spannungsfeld);
+    figure(1); title('Spannung', color='b', fontsize=20); plot(X,Spannungsfeld);
     plt.xlabel('Position (mm)'); plt.ylabel('Spannung (N/mm2)')
     figure(2); title('Verschiebung', color='b', fontsize=20);      plot(X,Verschiebungsfeld);
     plt.xlabel('Position (mm)'); plt.ylabel('Verschiebung (mm)')
-    # figure(3); title('plast. Dehnung', color='b', fontsize=20);    plot(X,epsilon_p_feld);
-    # plt.xlabel('Position (mm)'); plt.ylabel('plast. Dehnung (-)')
-    figure(4); title('Dehnung', color='b', fontsize=20);           plot(X,Spannungsfeld/2.1E5)
+    figure(3); title('plast. Dehnung', color='b', fontsize=20);    plot(X,epsilon_p_feld);
+    plt.xlabel('Position (mm)'); plt.ylabel('plast. Dehnung (-)')
+    figure(4); title('Dehnung', color='b', fontsize=20);           plot(X,Dehnungsfeld)
     plt.xlabel('Position (mm)'); plt.ylabel('Dehnung (-)')
 
     show()

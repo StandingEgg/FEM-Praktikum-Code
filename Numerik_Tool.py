@@ -2,10 +2,6 @@ import numpy as np
 import math
 from FE_Functions import *
 
-
-
-
-
 # Gausssche Quadratur
 def GaussQuad (f, g_num):
     # f=zu integrierende Funktion, g_num=Anzahl der Stuetzpunkte, liefert den exakten Integrationswert fuer ein Polynom vom Grad (2*g_num-1)
@@ -33,7 +29,7 @@ def GaussQuad (f, g_num):
         #x = (p+1)/2.0*(b-a)+a
         #results += w * f(x) * dX_dxi
         # Calculate with f_xi, not f_x !
-        results = w * f(p)
+        results += w * f(p)
 
 
     return results
