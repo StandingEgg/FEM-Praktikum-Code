@@ -282,7 +282,6 @@ def Elastischer_Praediktor (elemente, N_xi, D):
         sigma_list.append(elemente[e]['Spannung'])
         sigma_array = np.asarray(sigma_list)
 
-
     return epsilon_array, sigma_array
 
 # Plastischer Korrektor
