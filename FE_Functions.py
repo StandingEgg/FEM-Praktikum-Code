@@ -234,7 +234,8 @@ def Anpassen_Verschiebungsvektor(D, x):
     # ist bereits enthalten.
     # TODO Praktikumsaufgabe 4:  - vervollstaendigen Sie die fehlende Codezeile
     if Type_RB == 'NEUMANN-RB':
-        D = np.insert(x, 0, 0)
+        for i, e in enumerate(x):
+            D[i+1] = e
 
     # Passt den Verschiebungsvektor D um die berechneten Werte x an. Der erste (linke Einspannung)
     # und der letzte (Verschiebungs-RB) Eintrag sind bereits enthalten.
