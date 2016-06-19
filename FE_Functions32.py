@@ -98,7 +98,7 @@ def Dirichlet_RB ():
     D[0] = 0                                    # An der ersten Stelle (Einspannung) zwingend Null.
 
     # TODO Praktikumsaufgabe 5: Verschiebungsrandbedinung am rechten Rand vorgeben
-    # D[-1] = 0.9
+    D[-1] = 0.9
     return D
 
 
@@ -251,10 +251,8 @@ def Elastischer_Praediktor (elemente, N_xi, D):
     # Anzahl der Gausspunkte
     if g_num == 1:
         g = np.array([0])
-        w = np.array([2])
     elif g_num == 2:
         g = np.array([-(1./3)**0.5,+(1./3)**0.5])
-        w = np.array([1,1])
     else:
         print ("Es sind nur 1-2 Gausspunkte moeglich!")
 
@@ -270,10 +268,10 @@ def Elastischer_Praediktor (elemente, N_xi, D):
     for e in range(e_num):
 
         # Dehnung (= epsilon) = N_xi*d;
-        elemente[e]['Dehnung'] = np.array((N_xi[0](g[0])*2/elemente[e]['h'] * D[0+2*e] +\
-        N_xi[1](g[0])*2/elemente[e]['h'] * D[1+2*e] + N_xi[2](g[0])*2/elemente[e]['h'] * D[2+2*e])*w[0],\
+        elemente[e]['Dehnung'] = np.array(((N_xi[0](g[0])*2/elemente[e]['h'] * D[0+2*e] +\
+        N_xi[1](g[0])*2/elemente[e]['h'] * D[1+2*e] + N_xi[2](g[0])*2/elemente[e]['h'] * D[2+2*e]),
         (N_xi[0](g[1])*2/elemente[e]['h'] * D[0+2*e] +\
-        N_xi[1](g[1])*2/elemente[e]['h'] * D[1+2*e] + N_xi[2](g[1])*2/elemente[e]['h'] * D[2+2*e])*w[1])
+        N_xi[1](g[1])*2/elemente[e]['h'] * D[1+2*e] + N_xi[2](g[1])*2/elemente[e]['h'] * D[2+2*e])))
 
         epsilon_list.append(elemente[e]['Dehnung'])
         epsilon_array = np.asarray(epsilon_list)
@@ -281,6 +279,7 @@ def Elastischer_Praediktor (elemente, N_xi, D):
         elemente[e]['Spannung'] = elemente[e]['E'] * (elemente[e]['Dehnung'] - elemente[e]['epsilon_p'])
         sigma_list.append(elemente[e]['Spannung'])
         sigma_array = np.asarray(sigma_list)
+
 
     return epsilon_array, sigma_array
 
@@ -297,6 +296,15 @@ def Plastischer_Korrektor (elemente):
 
         # "plastisch" = False solange keine plastische Verfestigung auftritt
         plastisch = False
+
+        for e in range(e_num):
+
+            for i in range(g_num):
+                if elemente[e]['Spannung'][i] >= 140:
+                    plastische = True
+                else:
+                    plastische = False
+
 
         # TODO Praktikumsaufgabe 5:  - Ermitteln Sie die Fliessfunktion, ueberpruefen Sie ob die Fliessbedingung erfuellt ist oder nicht
         #                 - Ermitteln Sie die resultierende plastische Dehnung wenn die Fliessbedingung erfuellt ist
@@ -342,9 +350,13 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
     # Schleife ueber alle Elemente
     for e in range(e_num):
         elemente[e]['Verschiebungsfeld'] = N[0](xi) * D[0+2*e] + N[1](xi) * D[1+2*e] + N[2](xi) * D[2+2*e]   # Verschiebungsfeld = N*d
-        elemente[e]['Dehnungsfeld'] = N_xi[0](xi) * 2/elemente[e]['h'] * np.ones(21) * D[0+2*e] +\
-        N_xi[1](xi) * 2/elemente[e]['h'] * np.ones(21) * D[1+2*e] +\
-        N_xi[2](xi) * 2/elemente[e]['h'] * np.ones(21) * D[2+2*e]         # Dehnungsfeld (^= epsilon) = N_x*d;
+        # elemente[e]['Dehnungsfeld'] = N_xi[0](xi) * 2/elemente[e]['h'] * np.ones(21) * D[0+2*e] +\
+        # N_xi[1](xi) * 2/elemente[e]['h'] * np.ones(21) * D[1+2*e] +\
+        # N_xi[2](xi) * 2/elemente[e]['h'] * np.ones(21) * D[2+2*e]         # Dehnungsfeld (^= epsilon) = N_x*d;
+
+        elemente[e]['Dehnungsfeld'] = 3*(elemente[e]['Dehnung'][1]-elemente[e]['Dehnung'][0])/(2*(3**0.5))*xi + \
+        0.5*(elemente[e]['Dehnung'][1]+elemente[e]['Dehnung'][0])
+         # Dehnungsfeld (^= epsilon) = N_x*d;
         elemente[e]['epsilon_p_feld']    = make_func_of_epsilon_p(elemente[e]['epsilon_p'])(xi)*np.ones(21)
         elemente[e]['Spannungsfeld'] = elemente[e]['E'] * (elemente[e]['Dehnungsfeld'] - elemente[e]['epsilon_p_feld']) # Spannungsfeld = E * (epsilon - epsilon^p)
         elemente[e]['X'] = elemente[e]['1.Knoten'] + (xi+1)/2*elemente[e]['h']

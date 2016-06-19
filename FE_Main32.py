@@ -23,7 +23,7 @@ g_num = 2
 N_num = 3
 
 # Art des Materialverhaltens.       ELASTISCH, ISOTROP oder KINEMATISCH
-Type_Verf = 'ELASTISCH'
+Type_Verf = 'ISOTROP'
 
 # Art der rechten Randbedingung.    DIRICHLET-RB  oder NEUMANN-RB
 Type_RB = 'DIRICHLET-RB'
