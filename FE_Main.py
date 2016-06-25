@@ -23,7 +23,7 @@ g_num = 2
 N_num = 3
 
 # Art des Materialverhaltens.       ELASTISCH, ISOTROP oder KINEMATISCH
-Type_Verf = 'ELASTISCH'
+Type_Verf = 'KINEMATISCH'
 
 # Art der rechten Randbedingung.    DIRICHLET-RB  oder NEUMANN-RB
 Type_RB = 'NEUMANN-RB'
@@ -113,6 +113,9 @@ for Lastschritt in Lastschrittfeld:
     # -----------------------------------------------------------------------------------
 
 ##============================================  POSTPROCESSING  =========================================================
+
+
+
 
 if Type_Verf == 'ISOTROP' or Type_Verf == 'ELASTISCH':
     Postprocessing(elemente, S, F, D, N, N_xi)

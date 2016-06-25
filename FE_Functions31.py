@@ -1,10 +1,9 @@
 import numpy as np
 import scipy as sp
-from Numerik_Tool32 import *
+from Numerik_Tool31 import *
 import pylab
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure, plot,show, title
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 
 # Liefert die gewuenschten n Ansatzfunktionen
@@ -64,13 +63,11 @@ def defElements():
     # TODO Praktikumsaufgabe 6: Materialparameter fuer kinematische Verfestigung definieren
     sigma_y   = 140                       # Fliessspannung
     K_elplast = 4000                       # elastoplast. Tangentenmodul
-    epsilon_p = 0.0                       # initiale plastische Dehnung
+    epsilon_p = 0                       # initiale plastische Dehnung
     m = 1                               # Exponent der isotropen Verfestigung
     H = 0                               # kinematische Verfestigung
     q = 0                               # initiale kinematische Verfestigungsvariable: q_0
     #####
-    # Aus Ludwik-Gleichung:
-    K_plast = E * K_elplast/(E - K_elplast)
 
     # Groesse des Arrays fuer plast Dehnung und kinem Verfestigung an die Anzahl von Gausspunkten anpassen
     if g_num == 1:
@@ -88,20 +85,11 @@ def defElements():
     #                - Vervollstaendigen Sie fehlende Eintraege fuer e2, e3 und e4
     #                - Hilfe-Schlagwort: Dictionary
 
-    e1 = {'1.Knoten':0,       'h':2.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy(), 'K_plast':K_plast }
-    e2 = {'1.Knoten':2.*L/11, 'h':2.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy(), 'K_plast':K_plast }
-    e3 = {'1.Knoten':4.*L/11, 'h':2.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy(), 'K_plast':K_plast }
-    e4 = {'1.Knoten':6.*L/11, 'h':1.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy(), 'K_plast':K_plast }
-    e5 = {'1.Knoten':7.*L/11, 'h':4.*L/11, 'f_V':0,   'F_R':F_R, 'Position_F_R':1, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy(), 'K_plast':K_plast }
-
-    if Type_RB != 'NEUMANN-RB':
-        e1['f_V'] = 0; e1['F_R'] = 0
-        e2['f_V'] = 0; e2['F_R'] = 0
-        e3['f_V'] = 0; e3['F_R'] = 0
-        e4['f_V'] = 0; e4['F_R'] = 0
-        e5['f_V'] = 0; e5['F_R'] = 0
-
-
+    e1 = {'1.Knoten':0,       'h':2.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy() }
+    e2 = {'1.Knoten':2.*L/11, 'h':2.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy() }
+    e3 = {'1.Knoten':4.*L/11, 'h':2.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy() }
+    e4 = {'1.Knoten':6.*L/11, 'h':1.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy() }
+    e5 = {'1.Knoten':7.*L/11, 'h':4.*L/11, 'f_V':0,   'F_R':F_R, 'Position_F_R':1, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy() }
     return np.array([e1,e2,e3,e4,e5])
 
 def Dirichlet_RB ():
@@ -110,7 +98,7 @@ def Dirichlet_RB ():
     D[0] = 0                                    # An der ersten Stelle (Einspannung) zwingend Null.
 
     # TODO Praktikumsaufgabe 5: Verschiebungsrandbedinung am rechten Rand vorgeben
-    D[-1] = 0.9
+    # D[-1] = 0.9
     return D
 
 
@@ -163,24 +151,11 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
     F = np.zeros ((F_num))
     F_fv_part = np.zeros((F_num))
     F_Fr_part = np.zeros((F_num))
-    F_Fp_part = np.zeros((F_num))
 
     for e in range(e_num):
         el = (N_num-1)*e
         fv = np.zeros((N_num))
         Fr = np.zeros((N_num))
-        Fp = np.zeros((N_num))
-
-        # calculate the epsilon_p part loads
-        for i, p in enumerate(N_xi):
-            # when we use two Gauss points for each element, it's necessary to extrapolate epsilon_p from Gauss points to nodes
-            # because we calculate here the stress at nodes!
-            node_locations = [-1, 0, 1]
-            gauss_int = GaussQuad(lambda xi: p(xi), g_num)
-            Fp_value = elemente[e]['E'] * elemente[e]['A'] *\
-            (3*(elemente[e]['epsilon_p'][1]-elemente[e]['epsilon_p'][0])/(2*(3)**0.5))+ \
-            0.5*(elemente[e]['epsilon_p'][1]-elemente[e]['epsilon_p'][0])* node_locations[i] * gauss_int
-            Fp[i] = Fp_value
 
         for i, p in enumerate(N):
             gauss_int = GaussQuad(lambda xi: p(xi) , g_num)
@@ -192,11 +167,11 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
             Fr[i] = Fr_value
 
         for i in range(N_num):
+
             F_fv_part[el+i] += fv[i]
             F_Fr_part[el+i] += Fr[i]
-            F_Fp_part[el+i] += Fp[i]
 
-    F = F_fv_part + F_Fr_part + F_Fp_part
+    F = F_fv_part + F_Fr_part
 
     # TODO Praktikumsaufgabe 4:
         # Schleife ueber die Elemente
@@ -243,11 +218,6 @@ def Anpassen_Lastvektor (S, F, D):
     # TODO Praktikumsaufgabe 5:  - Lastvektor um die linke Einspannung reduzieren
     #                 - Rechte Verschiebung mit Steifigkeitsmatrix verrechnen und Lastvektor damit anpassen
     elif Type_RB == 'DIRICHLET-RB':
-
-        # minus the force vector of right end.
-        for i in range(F_num):
-            F[i] = F[i] - np.array(S[10][i]*D[-1])
-
         # remove the first and last value
         Q = np.delete(F, 0)
         F = np.delete(Q, -1)
@@ -327,20 +297,6 @@ def Plastischer_Korrektor (elemente):
         # "plastisch" = False solange keine plastische Verfestigung auftritt
         plastisch = False
 
-        for e in range(e_num):
-            for i in range(g_num):
-            # here using the first stress value and the first epsilon_p value, it's an issue if it is robust enough..
-                if elemente[e]['Spannung'][i] - elemente[e]['sigma_y']-elemente[e]['K_plast']*(elemente[e]['epsilon_p'][0])**(1/elemente[e]['m'])>0:
-                    plastisch = True
-                    flowfunc = lambda epsilon_p: elemente[e]['E']*(elemente[e]['Dehnung'][i]-epsilon_p)-(elemente[e]['sigma_y']+elemente[e]['K_plast']*(epsilon_p**(1/elemente[e]['m'])))
-                    elemente[e]['epsilon_p'][i] = newtons_method(f=flowfunc, df=derivative(flowfunc), x0=0, e=1e-9)
-                    # elemente[e]['epsilon_p'][i] = (elemente[e]['E']*elemente[e]['Dehnung'][i]-elemente[e]['sigma_y'])/(elemente[e]['K_plast']+elemente[e]['E'])
-                    # a = elemente[e]['epsilon_p'][i]
-
-            else:
-                plastisch = False
-
-
         # TODO Praktikumsaufgabe 5:  - Ermitteln Sie die Fliessfunktion, ueberpruefen Sie ob die Fliessbedingung erfuellt ist oder nicht
         #                 - Ermitteln Sie die resultierende plastische Dehnung wenn die Fliessbedingung erfuellt ist
         #                 - Setzen Sie die Variable "plastisch" auf True sobald eine plastische Dehnung erfolgte
@@ -385,14 +341,14 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
     # Schleife ueber alle Elemente
     for e in range(e_num):
         elemente[e]['Verschiebungsfeld'] = N[0](xi) * D[0+2*e] + N[1](xi) * D[1+2*e] + N[2](xi) * D[2+2*e]   # Verschiebungsfeld = N*d
-
         # elemente[e]['Dehnungsfeld'] = N_xi[0](xi) * 2/elemente[e]['h'] * np.ones(21) * D[0+2*e] +\
         # N_xi[1](xi) * 2/elemente[e]['h'] * np.ones(21) * D[1+2*e] +\
         # N_xi[2](xi) * 2/elemente[e]['h'] * np.ones(21) * D[2+2*e]         # Dehnungsfeld (^= epsilon) = N_x*d;
 
         elemente[e]['Dehnungsfeld'] = 3*(elemente[e]['Dehnung'][1]-elemente[e]['Dehnung'][0])/(2*(3**0.5))*xi + \
         0.5*(elemente[e]['Dehnung'][1]+elemente[e]['Dehnung'][0])
-        # Dehnungsfeld (^= epsilon) = N_x*d;
+         # Dehnungsfeld (^= epsilon) = N_x*d;
+
         elemente[e]['epsilon_p_feld']    = make_func_of_epsilon_p(elemente[e]['epsilon_p'])(xi)*np.ones(21)
         elemente[e]['Spannungsfeld'] = elemente[e]['E'] * (elemente[e]['Dehnungsfeld'] - elemente[e]['epsilon_p_feld']) # Spannungsfeld = E * (epsilon - epsilon^p)
         elemente[e]['X'] = elemente[e]['1.Knoten'] + (xi+1)/2*elemente[e]['h']
@@ -446,26 +402,14 @@ def Postprocessing (elemente, S, F, D, N, N_xi):
               # Transforamtion auf globale X-Koordinate
 
     # Ausgabe der Ergebisse in Form von Plots
-
-    fig, ax = plt.subplots()
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-
-    figure(1); title('Spannung', color='b', fontsize=20);  plot(X,Spannungsfeld);
-    plt.xlabel('Position (mm)'); plt.ylabel('Spannung (N/mm2)'); pylab.ylim([140.3,141.2])
+    figure(1); title('Spannung', color='b', fontsize=20); plot(X,Spannungsfeld);
+    plt.xlabel('Position (mm)'); plt.ylabel('Spannung (N/mm2)')
     figure(2); title('Verschiebung', color='b', fontsize=20);      plot(X,Verschiebungsfeld);
     plt.xlabel('Position (mm)'); plt.ylabel('Verschiebung (mm)')
-
-    fig, ax = plt.subplots()
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.8f'))
-
     figure(3); title('plast. Dehnung', color='b', fontsize=20);    plot(X,epsilon_p_feld);
-    plt.xlabel('Position (mm)'); plt.ylabel('plast. Dehnung (-)'); pylab.ylim([0.0001485,0.0001488])
-
-    fig, ax = plt.subplots()
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.7f'))
-
+    plt.xlabel('Position (mm)'); plt.ylabel('plast. Dehnung (-)')
     figure(4); title('Dehnung', color='b', fontsize=20);           plot(X,Dehnungsfeld)
-    plt.xlabel('Position (mm)'); plt.ylabel('Dehnung (-)'); pylab.ylim([0.000816,0.000820])
+    plt.xlabel('Position (mm)'); plt.ylabel('Dehnung (-)')
 
     show()
 

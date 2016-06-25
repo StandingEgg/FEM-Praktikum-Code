@@ -1,6 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jun 24 15:33:14 2016
+
+@author: Yifei
+"""
+
 import numpy as np
 import math
-from FE_Functions import *
+from FE_Functions31 import *
 
 # Gausssche Quadratur
 def GaussQuad (f, g_num):
@@ -95,7 +102,7 @@ def dx(f, x):
 
 def newtons_method(f, df, x0, e):
     delta = dx(f, x0)
-    while delta > e:
+    while delta.all() > e:
         x0 = x0 - f(x0)/df(x0)
         delta = dx(f, x0)
     return x0

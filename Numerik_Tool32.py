@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from FE_Functions import *
+from FE_Functions32 import *
 
 # Gausssche Quadratur
 def GaussQuad (f, g_num):

@@ -61,11 +61,11 @@ def defElements():
     #####  Werden erst in Termin 4 und 5 von Bedeutung sein => zunaechst mit Null initialisiert
     # TODO Praktikumsaufgabe 5: Materialparameter fuer isotrope Verfestigung definieren
     # TODO Praktikumsaufgabe 6: Materialparameter fuer kinematische Verfestigung definieren
-    sigma_y   = 140                       # Fliessspannung
+    sigma_y   = 70                       # Fliessspannung
     K_elplast = 4000                       # elastoplast. Tangentenmodul
     epsilon_p = 0                       # initiale plastische Dehnung
     m = 1                               # Exponent der isotropen Verfestigung
-    H = 0                               # kinematische Verfestigung
+    H = 2.1E5                               # kinematische Verfestigung
     q = 0                               # initiale kinematische Verfestigungsvariable: q_0
     #####
 
@@ -90,6 +90,14 @@ def defElements():
     e3 = {'1.Knoten':4.*L/11, 'h':2.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy() }
     e4 = {'1.Knoten':6.*L/11, 'h':1.*L/11, 'f_V':f_V, 'F_R':0,   'Position_F_R':0, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy() }
     e5 = {'1.Knoten':7.*L/11, 'h':4.*L/11, 'f_V':0,   'F_R':F_R, 'Position_F_R':1, 'E':E, 'A':A, 'sigma_y':sigma_y, 'K_elplast':K_elplast, 'm':m, 'H':H, 'q':q_array.copy(), 'epsilon_p':epsilon_p_array.copy() }
+
+    if Type_Verf == 'KINEMATISCH':
+        e1['f_V'] = 0
+        e2['f_V'] = 0
+        e3['f_V'] = 0
+        e4['f_V'] = 0
+        e5['f_V'] = 0
+
     return np.array([e1,e2,e3,e4,e5])
 
 def Dirichlet_RB ():
@@ -151,11 +159,24 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
     F = np.zeros ((F_num))
     F_fv_part = np.zeros((F_num))
     F_Fr_part = np.zeros((F_num))
+    F_Fp_part = np.zeros((F_num))
 
     for e in range(e_num):
         el = (N_num-1)*e
         fv = np.zeros((N_num))
         Fr = np.zeros((N_num))
+        Fp = np.zeros((N_num))
+
+        # calculate the epsilon_p part loads
+        for i, p in enumerate(N_xi):
+            # when we use two Gauss points for each element, it's necessary to extrapolate epsilon_p from Gauss points to nodes
+            # because we calculate here the stress at nodes!
+            node_locations = [-1, 0, 1]
+            gauss_int = GaussQuad(lambda xi: p(xi), g_num)
+            Fp_value = elemente[e]['E'] * elemente[e]['A'] *\
+            (3*(elemente[e]['epsilon_p'][1]-elemente[e]['epsilon_p'][0])/(2*(3)**0.5))+ \
+            0.5*(elemente[e]['epsilon_p'][1]-elemente[e]['epsilon_p'][0])* node_locations[i] * gauss_int
+            Fp[i] = Fp_value
 
         for i, p in enumerate(N):
             gauss_int = GaussQuad(lambda xi: p(xi) , g_num)
@@ -163,15 +184,16 @@ def Lastvektor (elemente, N, N_xi, Lastschritt):
             fv_value = elemente[e]['h'] /2 * elemente[e]['A'] * gauss_int * elemente[e]['f_V']
             fv[i] = fv_value
             # calculate the external force at points
-            Fr_value = p(elemente[e]['Position_F_R']) * elemente[e]['F_R']
+            Fr_value = p(elemente[e]['Position_F_R']) * elemente[e]['F_R'] * Lastschritt
             Fr[i] = Fr_value
 
         for i in range(N_num):
 
             F_fv_part[el+i] += fv[i]
             F_Fr_part[el+i] += Fr[i]
+            F_Fp_part[el+i] += Fp[i]
 
-    F = F_fv_part + F_Fr_part
+    F = F_fv_part + F_Fr_part + F_Fp_part
 
     # TODO Praktikumsaufgabe 4:
         # Schleife ueber die Elemente
@@ -313,6 +335,16 @@ def Plastischer_Korrektor (elemente):
 
         # "plastisch" = False solange keine plastische Verfestigung auftritt
         plastisch = False
+        for e in range(e_num):
+            for i in range(g_num):
+                if abs(elemente[e]['Spannung'][i] - elemente[e]['q'][i]) - elemente[e]['sigma_y'] > 0:
+                    plastisch = True
+                    flowfunc = lambda epsilon_p: abs(elemente[e]['E']*(elemente[e]['Dehnung'][i]-epsilon_p) - elemente[e]['H']*epsilon_p) - elemente[e]['sigma_y']
+                    elemente[e]['epsilon_p'][i] = newtons_method(f=flowfunc, df=derivative(flowfunc), x0=0, e=1e-9)
+                    elemente[e]['q'][i] = elemente[e]['epsilon_p'][i] * elemente[e]['H']
+
+                else:
+                    pass
 
         # TODO Praktikumsaufgabe 6:  - Ermitteln Sie die Fliessfunktion, ueberpruefen Sie ob die Fliessbedingung erfuellt ist oder nicht
         #                 - Ermitteln Sie die resultierende plastische Dehnung wenn die Fliessbedingung erfuellt ist
