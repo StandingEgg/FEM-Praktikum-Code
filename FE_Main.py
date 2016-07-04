@@ -126,5 +126,9 @@ elif Type_Verf == 'KINEMATISCH':
     title('Spannungs-Dehnungs-Diagramm', color='b', fontsize=20)
     plot(Dehnung,Spannung)
     plot(Dehnung,kinVerfVar)
+
     show()
+    special_strains = [Dehnung[0], Dehnung[10], Dehnung[20], Dehnung[30], Dehnung[40], Dehnung[50]]
+    special_q = [kinVerfVar[0], kinVerfVar[10], kinVerfVar[20], kinVerfVar[30], kinVerfVar[40], kinVerfVar[50]]
 # -----------------------------------------------------------------------------------
+print(N_num)
